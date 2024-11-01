@@ -1,0 +1,55 @@
+FROM base-img:latest AS base-postdb-img
+ARG USER_UID
+ARG USER_GID
+ARG MX_APP_STEP_VERSION
+#
+ARG MX_BASE_APP_DIR
+ARG MX_BASE_DIR
+ARG MX_CONTAINER_NAME
+ARG MX_ALLOWED_SUBNET
+ARG MX_SHARED_GROUP_NAME
+ARG MX_DB_SHARED_LOCATION
+##
+ARG MX_STEP_HOST
+ARG MX_STEPPATH
+ARG MX_APP_POSTGRES_VERSION
+ARG MX_POSTGRES_USER
+ARG MX_POSTGRES_DB
+ARG MX_POST_CERT_DUR
+ARG MX_POST_EXP_CHECK
+##  STEPPATH rquired by step
+ENV MX_BASE_APP_DIR=${MX_BASE_APP_DIR} \
+    MX_BASE_DIR=${MX_BASE_DIR} \
+    MX_CONTAINER_NAME=$MX_CONTAINER_NAME \
+    MX_ALLOWED_SUBNET=${MX_ALLOWED_SUBNET} \
+    MX_SHARED_GROUP_NAME=$MX_SHARED_GROUP_NAME \
+    MX_DB_SHARED_LOCATION=$MX_DB_SHARED_LOCATION \
+    MX_STEP_HOST=${MX_STEP_HOST} \
+    MX_STEPPATH=${MX_STEPPATH} \
+    STEPPATH=${MX_STEPPATH} \
+    MX_APP_POSTGRES_VERSION=${MX_APP_POSTGRES_VERSION} \
+    MX_POSTGRES_USER=${MX_POSTGRES_USER} \
+    MX_POSTGRES_DB=${MX_POSTGRES_DB} \
+    MX_POST_CERT_DUR=${MX_POST_CERT_DUR} \
+    MX_POST_EXP_CHECK=${MX_POST_EXP_CHECK}
+RUN wget https://dl.smallstep.com/gh-release/cli/gh-release-header/v${MX_APP_STEP_VERSION}/step-cli_${MX_APP_STEP_VERSION}_amd64.rpm \
+        && rpm -i step-cli_${MX_APP_STEP_VERSION}_amd64.rpm \
+        && rm -rf step-cli_${MX_APP_STEP_VERSION}_amd64.rpm
+RUN groupadd -g ${USER_GID} -r postgres \
+        && useradd -r postgres -g postgres -u ${USER_UID} -d /home/postgres 
+RUN usermod -aG ${MX_SHARED_GROUP_NAME} postgres
+RUN groups postgres
+RUN mkdir -p /home/postgres/.info /home/postgres/.key /home/postgres/cert /home/postgres/startup ${MX_BASE_APP_DIR} ${MX_DB_SHARED_LOCATION}
+ADD mx-base-postdb/config/start-post.sh /home/postgres/startup/start-post.sh
+RUN chown -R postgres:postgres /home/postgres \
+        && chown -R postgres:postgres ${MX_BASE_DIR} \
+        && chown -R postgres:${MX_SHARED_GROUP_NAME} ${MX_DB_SHARED_LOCATION} \
+        && chmod 750 /home/postgres/startup/start-post.sh
+RUN dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm \
+        && dnf -qy module disable postgresql \
+        && dnf install -y postgresql${MX_APP_POSTGRES_VERSION}-server
+ENV PATH="${PATH}:/usr/pgsql-${MX_APP_POSTGRES_VERSION}/bin"
+USER postgres
+WORKDIR /home/postgres
+CMD [ "/usr/bin/bash", "-c", "/home/postgres/startup/start-post.sh"]
+

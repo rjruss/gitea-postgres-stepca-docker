@@ -1,0 +1,19 @@
+services:
+  mx-base-build:
+    container_name: base-run
+    image: base-img
+    build:
+      dockerfile: mx-base-dockerfile
+      target: base-img
+      args:
+        #BASE BUILD
+        - USER_UID=${USER_UID}
+        - USER_GID=${USER_GID}
+        - MX_SHARED_ENV_GROUP=${MX_SHARED_ENV_GROUP}
+        - MX_SHARED_GROUP_NAME=${MX_SHARED_GROUP_NAME}
+        - MX_SHARED_DIR=${MX_SHARED_DIR}
+        - MX_AGEDIR=${MX_AGEDIR}
+        - MX_AGEDIR_KEYS=${MX_AGEDIR_KEYS}
+        - MX_AGEDIR_INFO=${MX_AGEDIR_INFO}
+        - MX_APP_STEP_VERSION=${MX_APP_STEP_VERSION}
+        - MX_APP_GITEA_VERSION=${MX_APP_GITEA_VERSION}

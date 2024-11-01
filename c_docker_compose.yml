@@ -1,0 +1,4 @@
+include:
+  - mx-base-gitea-build-extracted-compose.yml
+  - mx-base-postdb-build-extracted-compose.yml
+  - mx-base-step-build-extracted-compose.yml

@@ -1,0 +1,71 @@
+services:
+  mx-base-postdb-build:
+    container_name: base-postdb-run
+    image: base-postdb-img
+    build:
+      dockerfile: mx-base-postdb-build-split-docker03
+      target: base-postdb-img
+      args:
+        #BASE BUILD
+        - USER_UID=${USER_UID}
+        - USER_GID=${USER_GID}
+        - MX_SHARED_ENV_GROUP=${MX_SHARED_ENV_GROUP}
+        - MX_SHARED_GROUP_NAME=${MX_SHARED_GROUP_NAME}
+        - MX_SHARED_DIR=${MX_SHARED_DIR}
+        - MX_AGEDIR=${MX_AGEDIR}
+        - MX_AGEDIR_KEYS=${MX_AGEDIR_KEYS}
+        - MX_AGEDIR_INFO=${MX_AGEDIR_INFO}
+        - MX_APP_STEP_VERSION=${MX_APP_STEP_VERSION}
+        - MX_APP_GITEA_VERSION=${MX_APP_GITEA_VERSION}
+        #Container Specific
+
+        #        - MX_APP_STEP_VERSION=0.27.2
+        - MX_BASE_DIR=/srv
+        - MX_BASE_APP_DIR=/srv/postdata
+        - MX_DB_SHARED_LOCATION=/mnt/shared
+        - MX_STEP_HOST=${MX_STEP_HOST}
+        - MX_STEPPATH=/srv/.step
+        - MX_CONTAINER_NAME=base-postdb-run
+        # Define client host to restrict access
+        - MX_ALLOWED_SUBNET=${MX_ALLOWED_SUBNET}
+        - MX_APP_POSTGRES_VERSION=${MX_APP_POSTGRES_VERSION}
+        - MX_POSTGRES_USER=${MX_POSTGRES_USER}
+        - MX_POSTGRES_DB=${MX_POSTGRES_DB}
+        #Postgres cert 168h for 7days
+        - MX_POST_CERT_DUR=168h
+        #a certificate "needs renewal" when it has passed 2% of its allotted lifetime.
+        - MX_POST_EXP_CHECK=90%
+    hostname: ${POSTDB_HOST}
+    domainname: ${DOMAIN}
+    #    ports:
+    #      - "5432:5432"
+    #      - "6432:5432"
+    networks:
+      - mx-base-net1
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-U", "{MX_POSTGRES_USER}", "-d", "${MX_POSTGRES_DB}"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
+    depends_on:
+      mx-base-step-build:
+        condition: service_started
+    volumes:
+      - mx_base_keys_vol1:/srv/shared/.age/.keys:ro
+      - mx_base_info_vol1:/srv/shared/.age/.info:ro
+      #      - pgdata:/var/lib/postgresql/data
+      - mx_base_pgdata_vol1:/srv
+      - shared:/mnt/shared
+    tty: true
+volumes:
+  mx_base_keys_vol1:
+    external: true
+  mx_base_info_vol1:
+    external: true
+  mx_base_pgdata_vol1:
+    external: true
+  shared:
+networks:
+  mx-base-net1:
+    external: true

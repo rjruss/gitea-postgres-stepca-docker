@@ -1,0 +1,64 @@
+services:
+  mx-base-[&replace_lower_app_name&]-build:
+    container_name: base-[&replace_lower_app_name&]-run
+    image: base-[&replace_lower_app_name&]-img
+    build:
+      dockerfile: mx-base-[&replace_lower_app_name&]-build-split-docker
+      target: base-[&replace_lower_app_name&]-img
+      args:
+        #BASE BUILD
+        - USER_UID=${USER_UID}
+        - USER_GID=${USER_GID}
+        - MX_SHARED_ENV_GROUP=${MX_SHARED_ENV_GROUP}
+        - MX_SHARED_GROUP_NAME=${MX_SHARED_GROUP_NAME}
+        - MX_SHARED_DIR=${MX_SHARED_DIR}
+        - MX_AGEDIR=${MX_AGEDIR}
+        - MX_AGEDIR_KEYS=${MX_AGEDIR_KEYS}
+        - MX_AGEDIR_INFO=${MX_AGEDIR_INFO}
+        - MX_APP_STEP_VERSION=${MX_APP_STEP_VERSION}
+        - MX_APP_[&REPLACE_UPPER_APP_NAME&]_VERSION=${MX_APP_[&REPLACE_UPPER_APP_NAME&]_VERSION}
+        #Container Specific
+        - MX_BASE_DIR=/srv
+        - MX_BASE_APP_DIR=/srv/[&replace_lower_app_name&]
+        - MX_STEP_HOST=${MX_STEP_HOST}
+        - MX_STEPPATH=/srv/[&replace_lower_app_name&]/.step
+        - MX_DB_HOST=base-postdb-run
+        - MX_DB_PORT=5432
+        - MX_POSTGRES_USER=${MX_POSTGRES_USER}
+        - MX_POSTGRES_DB=${MX_POSTGRES_DB}
+        - MX_DB_SHARED_LOCATION=/mnt/shared
+        #       - MX_[&REPLACE_UPPER_APP_NAME&]_ADMIN_USER=${MX_[&REPLACE_UPPER_APP_NAME&]_ADMIN_USER}
+        #       - MX_[&REPLACE_UPPER_APP_NAME&]_USER_EMAIL=${MX_[&REPLACE_UPPER_APP_NAME&]_USER_EMAIL}
+        - MX_[&REPLACE_UPPER_APP_NAME&]_CERT_DUR=48h
+        - MX_CONTAINER_NAME=base-[&replace_lower_app_name&]-run
+        - MX_[&REPLACE_UPPER_APP_NAME&]_EXP_CHECK=85%
+    hostname: ${[&REPLACE_UPPER_APP_NAME&]_HOST}
+    domainname: ${DOMAIN}
+#   ports:
+#     - "8010:8010"
+    networks:
+      - mx-base-net1
+#   depends_on:
+#     mx-base-step-build:
+#       condition: service_started
+#     mx-base-postdb-build:
+#       condition: service_healthy
+    volumes:
+      - mx_base_keys_vol1:/srv/shared/.age/.keys:ro
+      - mx_base_info_vol1:/srv/shared/.age/.info:ro
+      - mx_base_[&replace_lower_app_name&]_vol1:/srv
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - shared:/mnt/shared
+    tty: true
+volumes:
+  mx_base_keys_vol1:
+    external: true
+  mx_base_info_vol1:
+    external: true
+  mx_base_[&replace_lower_app_name&]_vol1:
+    external: true
+  shared:
+networks:
+  mx-base-net1:
+    external: true

@@ -1,0 +1,52 @@
+services:
+  mx-base-step-build:
+    container_name: base-step-run
+    image: base-step-img
+    build:
+      dockerfile: mx-base-step-build-split-docker02
+      target: base-step-img
+      args:
+        #BASE BUILD
+        - USER_UID=${USER_UID}
+        - USER_GID=${USER_GID}
+        - MX_SHARED_ENV_GROUP=${MX_SHARED_ENV_GROUP}
+        - MX_SHARED_GROUP_NAME=${MX_SHARED_GROUP_NAME}
+        - MX_SHARED_DIR=${MX_SHARED_DIR}
+        - MX_AGEDIR=${MX_AGEDIR}
+        - MX_AGEDIR_KEYS=${MX_AGEDIR_KEYS}
+        - MX_AGEDIR_INFO=${MX_AGEDIR_INFO}
+        - MX_APP_STEP_VERSION=${MX_APP_STEP_VERSION}
+        - MX_APP_STEP_PORT=${MX_APP_STEP_PORT}
+        #Container Specific
+        - MX_BASE_DIR=/srv
+        - MX_BASE_APP_DIR=/srv
+        - MX_CONTAINER_NAME=base-step-run
+        - MX_AUTH_NAME=basestepCA
+        - MX_PROV_NAME=baseprov
+        - MX_CONT_NAME=baseca
+        - MX_STEP_NAME=basestep
+        - MX_REMOT_MAN=true
+        - MX_ADDRESS=:${MX_APP_STEP_PORT}
+        # Max cert duration 2190h = 90 days, 8760h = 1 year
+        - MX_CERT_MAX_DUR=2190h
+    hostname: ${STEP_HOST}
+    domainname: ${DOMAIN}
+    ports:
+      - "${MX_APP_STEP_PORT}:${MX_APP_STEP_PORT}"
+    networks:
+      - mx-base-net1
+    volumes:
+      - mx_base_step_vol1:/home/step
+      - mx_base_keys_vol1:/srv/shared/.age/.keys:ro
+      - mx_base_info_vol1:/srv/shared/.age/.info:ro
+    tty: true
+volumes:
+  mx_base_step_vol1:
+    external: true
+  mx_base_keys_vol1:
+    external: true
+  mx_base_info_vol1:
+    external: true
+networks:
+  mx-base-net1:
+    external: true

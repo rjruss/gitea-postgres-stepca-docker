@@ -1,0 +1,59 @@
+FROM base-img:latest AS base-[&replace-app-name&]-img
+ARG USER_UID
+ARG USER_GID
+ARG MX_APP_STEP_VERSION
+ARG MX_APP_[&REPLACE-APP-NAME&]_VERSION
+#
+ARG MX_BASE_DIR
+ARG MX_BASE_APP_DIR
+ARG MX_CONTAINER_NAME
+ARG MX_STEP_HOST
+ARG MX_STEPPATH
+ARG MX_DB_HOST
+ARG MX_DB_PORT
+ARG MX_DB_SHARED_LOCATION
+ARG MX_POSTGRES_USER
+ARG MX_POSTGRES_DB
+ARG MX_SHARED_GROUP_NAME
+#[&replace-app-name&] cert 8h for 8 hours
+ARG MX_[&REPLACE-APP-NAME&]_CERT_DUR
+#a certificate "needs renewal" when it has passed 2% of its allotted lifetime.
+ARG MX_[&REPLACE-APP-NAME&]_EXP_CHECK
+ENV MX_BASE_DIR=${MX_BASE_DIR} \
+    MX_BASE_APP_DIR=${MX_BASE_APP_DIR} \
+    MX_CONTAINER_NAME=${MX_CONTAINER_NAME} \
+    MX_STEP_HOST=${MX_STEP_HOST} \
+    MX_STEPPATH=${MX_STEPPATH} \
+    STEPPATH=${MX_STEPPATH} \
+    MX_DB_HOST=${MX_DB_HOST} \
+    MX_DB_PORT=${MX_DB_PORT} \
+    MX_DB_SHARED_LOCATION=${MX_DB_SHARED_LOCATION} \
+    MX_POSTGRES_USER=${MX_POSTGRES_USER} \
+    MX_POSTGRES_DB=${MX_POSTGRES_DB} \
+    MX_SHARED_GROUP_NAME=${MX_SHARED_GROUP_NAME} \
+    MX_[&REPLACE-APP-NAME&]_CERT_DUR=${MX_[&REPLACE-APP-NAME&]_CERT_DUR} \
+    MX_[&REPLACE-APP-NAME&]_EXP_CHECK=${MX_[&REPLACE-APP-NAME&]_EXP_CHECK} 
+RUN wget https://dl.smallstep.com/gh-release/cli/gh-release-header/v${MX_APP_STEP_VERSION}/step-cli_${MX_APP_STEP_VERSION}_amd64.rpm \
+        && rpm -i step-cli_${MX_APP_STEP_VERSION}_amd64.rpm \
+        && rm -rf step-cli_${MX_APP_STEP_VERSION}_amd64.rpm
+RUN groupadd -g ${USER_GID} -r [&replace-user-name&] \
+        && useradd -r [&replace-user-name&] -g [&replace-user-name&] -u ${USER_UID} -d /home/[&replace-user-name&]
+RUN usermod -aG $MX_SHARED_GROUP_NAME [&replace-user-name&]
+RUN mkdir -p /home/[&replace-user-name&]/cert /home/[&replace-user-name&]/.ssh /home/[&replace-user-name&]/.tok /home/[&replace-user-name&]/.postgresql /home/[&replace-user-name&]/startup ${MX_BASE_APP_DIR}/data ${MX_BASE_APP_DIR}/custom ${MX_BASE_APP_DIR}/log 
+RUN mkdir -p ${MX_DB_SHARED_LOCATION}
+ADD mx-base-[&replace-app-name&]/config/start-[&replace-app-name&].sh /home/[&replace-user-name&]/startup/start-[&replace-app-name&].sh
+#ADD mx-base-[&replace-app-name&]/config/renew-certs.sh /home/[&replace-user-name&]/startup/renew-certs.sh
+#ADD mx-base-[&replace-app-name&]/config/app.ini ${MX_BASE_APP_DIR}/custom/app.ini
+WORKDIR ${MX_BASE_APP_DIR}
+#RUN wget HTTP_LOCATION:/[&replace-app-name&]/releases/download/v${MX_APP_[&REPLACE-APP-NAME&]_VERSION}/[&replace-app-name&]-${MX_APP_[&REPLACE-APP-NAME&]_VERSION}-linux-amd64
+RUN chmod 700 /home/[&replace-user-name&]/.ssh && touch /home/[&replace-user-name&]/.ssh/authorized_keys && chmod 600 /home/[&replace-user-name&]/.ssh/authorized_keys
+#RUN mv [&replace-app-name&]-${MX_APP_[&REPLACE-APP-NAME&]_VERSION}-linux-amd64 [&replace-app-name&]
+RUN chown -R [&replace-user-name&]:[&replace-user-name&] /home/[&replace-user-name&] \
+        && chown -R [&replace-user-name&]:[&replace-user-name&] ${MX_DB_SHARED_LOCATION} \
+        && chown -R [&replace-user-name&]:[&replace-user-name&] ${MX_BASE_DIR} \
+        && chmod 744 ${MX_BASE_APP_DIR} \
+        && chmod 750 /home/[&replace-user-name&]/startup/*.sh
+ENV PATH="${PATH}:${MX_BASE_APP_DIR}"
+USER [&replace-user-name&]
+WORKDIR /home/[&replace-user-name&]
+CMD [ "/usr/bin/bash", "-c", "/home/[&replace-user-name&]/startup/start-[&replace-app-name&].sh"]

@@ -1,0 +1,50 @@
+ARG USER_UID
+ARG USER_GID
+ARG MX_SHARED_ENV_GROUP
+ARG MX_SHARED_GROUP_NAME
+ARG MX_SHARED_DIR
+ARG MX_AGEDIR
+ARG MX_AGEDIR_KEYS
+ARG MX_AGEDIR_INFO
+ARG MX_APP_STEP_VERSION
+ARG MX_APP_GITEA_VERSION
+
+FROM rockylinux:9.3 AS base-img:latest
+ARG USER_UID
+ARG USER_GID
+ARG MX_BASE_APP_DIR
+ARG MX_SHARED_GROUP_NAME
+ARG MX_SHARED_ENV_GROUP
+ARG MX_SHARED_DIR
+ARG MX_AGEDIR
+ARG MX_AGEDIR_KEYS
+ARG MX_AGEDIR_INFO
+
+#ENV USER_UID=${USER_UID} \
+#    USER_GID=${USER_GID} \
+ENV MX_BASE_APP_DIR=${MX_BASE_APP_DIR} \
+    MX_SHARED_GROUP_NAME=${MX_SHARED_GROUP_NAME} \
+    MX_SHARED_ENV_GROUP=${MX_SHARED_ENV_GROUP} \
+    MX_SHARED_DIR=${MX_SHARED_DIR} \
+    MX_AGEDIR=${MX_AGEDIR} \
+    MX_AGEDIR_KEYS=${MX_AGEDIR_KEYS} \
+    MX_AGEDIR_INFO=${MX_AGEDIR_INFO} \
+    MX_BOLD='\033[1m' \
+    MX_RESET='\033[0m'
+RUN dnf -y update && yum install -y libxcrypt-compat procps wget unzip python3 augeas-libs jq openssl tmux nc pinentry iproute git glibc-locale-source glibc-langpack-en
+RUN localedef -i en_US -f UTF-8 en_US.UTF-8
+RUN echo "LANG=en_US.UTF-8" > /etc/locale.conf
+ADD ./mx-base-image/config/shared/* $MX_SHARED_DIR/.
+RUN groupadd -g $MX_SHARED_ENV_GROUP $MX_SHARED_GROUP_NAME
+ENV PATH="${PATH}:$MX_SHARED_DIR:$MX_AGEDIR"
+#ENV LANG C.UTF-8
+#ENV LC_ALL C.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+RUN mkdir -p $MX_AGEDIR $MX_AGEDIR_KEYS $MX_AGEDIR_INFO
+RUN chmod +rx $MX_SHARED_DIR/*sh
+RUN cd $MX_AGEDIR && curl -s -L -o age.tgz https://dl.filippo.io/age/latest?for=linux/amd64 \
+        && tar -xzf  age.tgz --strip-components=1 \
+        && rm -f age.tgz
+

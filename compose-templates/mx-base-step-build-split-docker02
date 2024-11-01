@@ -1,0 +1,45 @@
+FROM base-img:latest AS base-step-img
+ARG USER_UID
+ARG USER_GID
+ARG MX_APP_STEP_VERSION
+#
+ARG MX_BASE_APP_DIR
+ARG MX_BASE_DIR
+ARG MX_CONTAINER_NAME
+ARG MX_AUTH_NAME
+ARG MX_PROV_NAME
+ARG MX_CONT_NAME
+ARG MX_STEP_NAME
+ARG MX_REMOT_MAN
+ARG MX_ADDRESS
+ARG MX_CERT_MAX_DUR
+ARG MX_SHARED_GROUP_NAME
+ENV MX_BASE_APP_DIR=${MX_BASE_APP_DIR} \
+    MX_BASE_DIR=${MX_BASE_DIR} \
+    MX_CONTAINER_NAME=${MX_CONTAINER_NAME} \
+    MX_AUTH_NAME=${MX_AUTH_NAME} \
+    MX_PROV_NAME=${MX_PROV_NAME} \
+    MX_CONT_NAME=${MX_CONT_NAME} \
+    MX_STEP_NAME=${MX_STEP_NAME} \
+    MX_REMOT_MAN=${MX_REMOT_MAN} \
+    MX_ADDRESS=${MX_ADDRESS} \
+    MX_CERT_MAX_DUR=${MX_CERT_MAX_DUR} \
+    MX_SHARED_GROUP_NAME=${MX_SHARED_GROUP_NAME}
+RUN wget https://dl.smallstep.com/gh-release/cli/gh-release-header/v${MX_APP_STEP_VERSION}/step-cli_${MX_APP_STEP_VERSION}_amd64.rpm \
+        && rpm -i step-cli_${MX_APP_STEP_VERSION}_amd64.rpm \
+        && rm -rf step-cli_${MX_APP_STEP_VERSION}_amd64.rpm
+RUN wget https://github.com/smallstep/certificates/releases/download/v${MX_APP_STEP_VERSION}/step-ca_${MX_APP_STEP_VERSION}_amd64.rpm \
+        && rpm -i step-ca_${MX_APP_STEP_VERSION}_amd64.rpm \
+        && rm -rf step-ca_${MX_APP_STEP_VERSION}_amd64.rpm
+RUN groupadd -g ${USER_GID}  step \
+        && useradd  -g step -u ${USER_UID} -d /home/step step 
+RUN usermod -aG $MX_SHARED_GROUP_NAME step
+RUN mkdir -p  /home/step/startup
+ADD ./mx-base-step/config/start-step.sh /home/step/startup/start-step.sh
+RUN chown -R step:step /home/step
+RUN chmod 750 /home/step/startup/start-step.sh
+USER step
+WORKDIR /home/step
+CMD [ "/usr/bin/bash", "-c", "/home/step/startup/start-step.sh" ]
+
+

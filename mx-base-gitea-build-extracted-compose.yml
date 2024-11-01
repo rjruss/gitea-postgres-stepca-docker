@@ -1,0 +1,69 @@
+services:
+  mx-base-gitea-build:
+    container_name: base-gitea-run
+    image: base-gitea-img
+    build:
+      dockerfile: mx-base-gitea-build-split-docker04
+      target: base-gitea-img
+      args:
+        #BASE BUILD
+        - USER_UID=${USER_UID}
+        - USER_GID=${USER_GID}
+        - MX_SHARED_ENV_GROUP=${MX_SHARED_ENV_GROUP}
+        - MX_SHARED_GROUP_NAME=${MX_SHARED_GROUP_NAME}
+        - MX_SHARED_DIR=${MX_SHARED_DIR}
+        - MX_AGEDIR=${MX_AGEDIR}
+        - MX_AGEDIR_KEYS=${MX_AGEDIR_KEYS}
+        - MX_AGEDIR_INFO=${MX_AGEDIR_INFO}
+        - MX_APP_STEP_VERSION=${MX_APP_STEP_VERSION}
+        - MX_APP_GITEA_VERSION=${MX_APP_GITEA_VERSION}
+        - MX_APP_GITEA_PORT=${MX_APP_GITEA_PORT}
+        - MX_APP_GITEA_SSH_PORT=${MX_APP_GITEA_SSH_PORT}
+        #Container Specific
+        - MX_BASE_DIR=/srv
+        - MX_BASE_APP_DIR=/srv/gitea
+        - MX_STEP_HOST=${MX_STEP_HOST}
+        - MX_STEPPATH=/srv/gitea/.step
+        - MX_DB_HOST=base-postdb-run
+        - MX_DB_PORT=5432
+        - MX_POSTGRES_USER=${MX_POSTGRES_USER}
+        - MX_POSTGRES_DB=${MX_POSTGRES_DB}
+        - MX_DB_SHARED_LOCATION=/mnt/shared
+        #       - MX_GITEA_ADMIN_USER=${MX_GITEA_ADMIN_USER}
+        #       - MX_GITEA_USER_EMAIL=${MX_GITEA_USER_EMAIL}
+        - MX_GITEA_CERT_DUR=48h
+        - MX_CONTAINER_NAME=base-gitea-run
+        - MX_GITEA_EXP_CHECK=50%
+        - MX_GIT_DOMAIN=${GITEA_HOST}.${DOMAIN}
+        - MX_GIT_PORT=3010
+    hostname: ${GITEA_HOST}
+    domainname: ${DOMAIN}
+    ports:
+      - "${MX_APP_GITEA_PORT}:${MX_APP_GITEA_PORT}"
+      - "${MX_APP_GITEA_SSH_PORT}:22"
+    networks:
+      - mx-base-net1
+    depends_on:
+      mx-base-step-build:
+        condition: service_started
+      mx-base-postdb-build:
+        condition: service_healthy
+    volumes:
+      - mx_base_keys_vol1:/srv/shared/.age/.keys:ro
+      - mx_base_info_vol1:/srv/shared/.age/.info:ro
+      - mx_base_gitea_vol1:/srv
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - shared:/mnt/shared
+    tty: true
+volumes:
+  mx_base_keys_vol1:
+    external: true
+  mx_base_info_vol1:
+    external: true
+  mx_base_gitea_vol1:
+    external: true
+  shared:
+networks:
+  mx-base-net1:
+    external: true
